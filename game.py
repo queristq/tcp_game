@@ -23,19 +23,24 @@ class Player():
         pygame.draw.rect(win, self.color, self.rect)
 
     def move(self):
+        
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_LEFT]:
-            self.x -= self.vel
+            self.x = 0 
 
         if keys[pygame.K_RIGHT]:
-            self.x += self.vel
+            self.x = 200
 
         if keys[pygame.K_UP]:
-            self.y -= self.vel
+            self.y = 0
 
         if keys[pygame.K_DOWN]:
-            self.y += self.vel
+            self.y = 200
+        
+        if keys[pygame.K_LEFT] == False and keys[pygame.K_RIGHT] == False and keys[pygame.K_UP] == False and keys[pygame.K_DOWN]==False:
+            self.x = 100
+            self.y = 100
 
         self.update()
 
@@ -55,7 +60,7 @@ def make_pos(tup):
 def redrawWindow(win,player, player2):
     win.fill((255,255,255))
     player.draw(win)
-    player2.draw(win)
+    # player2.draw(win)
     pygame.display.update()
 
 

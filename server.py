@@ -1,9 +1,15 @@
 import socket
 from _thread import *
 import sys
+import serial
+
+run_flag = True
+
+serial_comm = serial.Serial('COM4',9600)
+serial_comm.timeout = 0.1
 
 server = "localhost"
-port = 5555
+port = 5556
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -25,7 +31,7 @@ def make_pos(tup):
 
 pos = [(0,0),(100,100)]
 
-def threaded_client(conn, player):
+def threaded_client(conn, player, run_flag):
     conn.send(str.encode(make_pos(pos[player])))
     reply = ""
     while True:
@@ -44,18 +50,47 @@ def threaded_client(conn, player):
 
                 print("Received: ", data)
                 print("Sending : ", reply)
-
+                
             conn.sendall(str.encode(make_pos(reply)))
+            
+            # a="5"
+            # if reply[0] == "0" and reply[1] == "0" :
+            #      a = "7"
+            # if reply[0] == "0" and reply[1] == "100" :
+            #      a = "8"
+
+            # serial_comm.write(str.encode(make_pos(a)))
+
         except:
             break
 
     print("Lost connection")
     conn.close()
+    run_flag = False
+    print (run_flag)
 
 currentPlayer = 0
-while True:
-    conn, addr = s.accept()
-    print("Connected to:", addr)
 
-    start_new_thread(threaded_client, (conn, currentPlayer))
-    currentPlayer += 1
+
+# def threaded_serial_read(count):
+#     while True: 
+#         count = count + 1
+#         print ( count )
+#         if ( count == 100):
+#             break
+#         try:
+#             print(serial_comm.readline().decode('utf-8'))
+#         except:
+#             break
+
+# start_new_thread(threaded_serial_read,(1,))
+
+# while True:
+
+conn, addr = s.accept()
+print("Connected to:", addr)
+
+start_new_thread(threaded_client, (conn, currentPlayer, run_flag, ))
+while run_flag:
+    print(run_flag) 
+currentPlayer += 1

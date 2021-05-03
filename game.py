@@ -57,7 +57,7 @@ def make_pos(tup):
     return str(tup[0]) + "," + str(tup[1])
 
 
-def redrawWindow(win,player, player2):
+def redrawWindow(win,player):
     win.fill((255,255,255))
     player.draw(win)
     # player2.draw(win)
@@ -67,17 +67,15 @@ def redrawWindow(win,player, player2):
 def main():
     run = True
     n = Network()
-    startPos = read_pos(n.getPos())
-    p = Player(startPos[0],startPos[1],100,100,(0,255,0))
-    p2 = Player(0,0,100,100,(255,0,0))
+    # startPos = read_pos(n.getPos())
+    # p = Player(startPos[0],startPos[1],100,100,(0,255,0))
+    p = Player(0,0,100,100,(255,0,0))
     clock = pygame.time.Clock()
 
     while run:
         clock.tick(60)
-        p2Pos = read_pos(n.send(make_pos((p.x, p.y))))
-        p2.x = p2Pos[0]
-        p2.y = p2Pos[1]
-        p2.update()
+        n.send(make_pos((p.x, p.y)))
+        p.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -85,6 +83,6 @@ def main():
                 pygame.quit()
 
         p.move()
-        redrawWindow(win, p, p2)
+        redrawWindow(win, p)
 
 main()

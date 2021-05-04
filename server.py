@@ -1,18 +1,22 @@
-import socket
-from _thread import *
-import sys
+from threading import Thread, Event
+from time import sleep
 import serial
+import socket
+import sys
 
-run_flag = True
-
-serial_comm = serial.Serial('COM4',9600)
+# serial comm constants
+serial_comm = serial.Serial('COM4',57600)
 serial_comm.timeout = 0.1
 
+# tcp comm constants
 server = "localhost"
-port = 5556
-
+port = 5555
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+# thread setup
+event = Event()
+
+# tcp bind
 try:
     s.bind((server, port))
 except socket.error as e:
@@ -25,72 +29,84 @@ def read_pos(str):
     str = str.split(",")
     return int(str[0]), int(str[1])
 
-
-def make_pos(tup):
-    return str(tup[0]) + "," + str(tup[1])
-
-pos = [(0,0),(100,100)]
-
-def threaded_client(conn, player, run_flag):
-    conn.send(str.encode(make_pos(pos[player])))
-    reply = ""
+def threaded_client(conn, var):
+    welcome_str = "connected"
+    conn.send(str.encode(welcome_str))
     while True:
         try:
             data = read_pos(conn.recv(2048).decode())
-            pos[player] = data
-
             if not data:
                 print("Disconnected")
                 break
             else:
-                if player == 1:
-                    reply = pos[0]
-                else:
-                    reply = pos[1]
-
-                print("Received: ", data)
-                print("Sending : ", reply)
+                if data[0] == 0 and data[1] == 0:
+                    var[0]=7
+                if data[0] == 100 and data[1] == 0:
+                    var[0]=8
+                if data[0] == 200 and data[1] == 0:
+                    var[0]=9
+                if data[0] == 0 and data[1] == 100:
+                    var[0]=4
+                if data[0] == 100 and data[1] == 100:
+                    var[0]=5
+                if data[0] == 200 and data[1] == 100:
+                    var[0]=6
+                if data[0] == 0 and data[1] == 200:
+                    var[0]=1
+                if data[0] == 100 and data[1] == 200:
+                    var[0]=2                                                                                                                       
+                if data[0] == 200 and data[1] == 200:
+                    var[0]=3                                                                                                                       
                 
-            conn.sendall(str.encode(make_pos(reply)))
-            
-            # a="5"
-            # if reply[0] == "0" and reply[1] == "0" :
-            #      a = "7"
-            # if reply[0] == "0" and reply[1] == "100" :
-            #      a = "8"
+                # print(a, data[0], data[1])
 
-            # serial_comm.write(str.encode(make_pos(a)))
 
         except:
             break
 
+        if event.is_set():
+            break
+
     print("Lost connection")
     conn.close()
-    run_flag = False
-    print (run_flag)
-
-currentPlayer = 0
-
-
-# def threaded_serial_read(count):
-#     while True: 
-#         count = count + 1
-#         print ( count )
-#         if ( count == 100):
-#             break
-#         try:
-#             print(serial_comm.readline().decode('utf-8'))
-#         except:
-#             break
-
-# start_new_thread(threaded_serial_read,(1,))
-
-# while True:
 
 conn, addr = s.accept()
 print("Connected to:", addr)
 
-start_new_thread(threaded_client, (conn, currentPlayer, run_flag, ))
-while run_flag:
-    print(run_flag) 
-currentPlayer += 1
+
+def threaded_serial_read(var):
+    i=0
+    while True:
+        print(serial_comm.readline().decode('utf-8'))
+        
+        serial_comm.write(str.encode(str(var[0])))        
+        for i in range(len(var)):
+            var[i] += 1
+        if event.is_set():
+            break
+        sleep(.1)
+    print('Stop printing')
+
+
+my_var = [1, 2, 3]
+
+t = Thread(target=threaded_client, args=(conn, my_var, ))
+t.start()
+
+t2 = Thread(target=threaded_serial_read, args=(my_var, ))
+t2.start()
+
+while True:
+    try:
+        # print(my_var)
+        # serial_comm.write(str(my_var[0]).encode())
+        sleep(1)
+    except KeyboardInterrupt:
+        event.set()
+        break
+t.join()
+print(my_var)
+
+
+
+serial_comm.close()
